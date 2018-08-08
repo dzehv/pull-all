@@ -1,0 +1,1 @@
+Pull all git subdirectories
