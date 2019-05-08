@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Simple script to pull all git subdirectories
+# Simple script to pull all git subdirectories with submodules if exists
 
 # NOTE: if the -depth 1 option is not available, try -mindepth 1 -maxdepth 1.
 
@@ -10,6 +10,8 @@
 
 echo 'Updating repositories...'
 find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git --git-dir={}/.git --work-tree=$PWD/{} pull \;
+echo 'Prune non existing branches...'
+find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git --git-dir={}/.git --work-tree=$PWD/{} fetch -p --all \;
 
 # Since git 1.8.5 we can do the next thing
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git -C {} pull \;
