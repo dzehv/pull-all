@@ -11,7 +11,7 @@
 
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec echo $PWD/{} \;
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec git --git-dir={}/.git --work-tree=$PWD/{} status \;
-# find . -maxdepth 1 -type d -not -path "." -not -path ".." \( -exec sh -c 'echo Repo: $PWD/{}; false' \; -false -o -exec git --git-dir={}/.git --work-tree=$PWD/{} pull \; \)
+# find . -maxdepth 1 -type d -not -path "." -not -path ".." \( -exec sh -c 'echo Repo: $PWD/{}; false' \; -false -o -exec git --git-dir={}/.git --work-tree=$PWD/{} pull --no-edit \; \)
 
 WRITE_REMOTES=0
 REMOTES_FILE="git_remotes.sh"
@@ -61,10 +61,10 @@ if [ "$WRITE_REMOTES" -eq 1 ]; then
 fi
 
 # Since git 1.8.5 we can do the next thing
-# find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git -C {} pull \;
+# find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git -C {} pull --no-edit \;
 # Update main repositories (always)
 echo "\e[92mUpdating repositories...\e[0m"
-find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git --git-dir={}/.git --work-tree=$PWD/{} pull \;
+find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git --git-dir={}/.git --work-tree=$PWD/{} pull --no-edit \;
 
 # Prune non existing remote branches (-p arg)
 if [ "$PRUNE" -eq 1 ]; then
