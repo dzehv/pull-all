@@ -75,5 +75,10 @@ fi
 # And submodules update (-s arg)
 if [ "$SUBMODULES" -eq 1 ]; then
     echo "\033[91mUpdating submodules...\033[0m"
-    find . -type f -name '.gitmodules' | sed -r 's|/[^/]+$||' | sort | uniq | xargs -I % sh -c 'echo Repo: $PWD/%; git -C $PWD/% submodule update --remote --recursive --merge'
+    SED="sed"
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # need to be installed e.g. from brew
+        SED="gsed"
+    fi
+    find . -type f -name '.gitmodules' | $SED -r 's|/[^/]+$||' | sort | uniq | xargs -I % sh -c 'echo Repo: $PWD/%; git -C $PWD/% submodule update --remote --recursive --merge'
 fi
