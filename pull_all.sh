@@ -13,13 +13,16 @@
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec git --git-dir={}/.git --work-tree=$PWD/{} status \;
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." \( -exec sh -c 'echo Repo: $PWD/{}; false' \; -false -o -exec git --git-dir={}/.git --work-tree=$PWD/{} pull --no-edit \; \)
 
+HELP=0
 WRITE_REMOTES=0
 REMOTES_FILE="git_remotes.sh"
 PRUNE=0
 SUBMODULES=0
 
-while getopts 'wpsf:' opt; do
+while getopts 'hwpsf:' opt; do
     case $opt in
+        h) HELP=1
+           ;;
         w) WRITE_REMOTES=1
            ;;
         p) PRUNE=1
@@ -38,6 +41,26 @@ shift "$((OPTIND-1))"
 
 # Params after '--' to ARGV
 [ "${1:-}" = "--" ] && shift
+
+if [ "$HELP" -eq 1 ]; then
+    USAGE=$(cat << EOF
+Usage: ./$(basename $0) [OPTIONS]\n
+\n
+Options:\n
+    -h, Show this text\n
+    -w, Write remotes to file as ready to clone sh script\n
+    -p, Prune non existing branches at remote\n
+    -s, Also update git submodules\n
+\n
+Examples:\n
+    ./pull_all.sh -p -s\n
+    Write remotes of repo list:\n
+    ./pull_all.sh -w -f remotes_file.sh
+EOF
+)
+    echo $USAGE
+    exit 0
+fi
 
 # TODO: process multiple git remotes
 # Collect repo links and write sh file as ready to git clone command
