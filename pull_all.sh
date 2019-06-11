@@ -13,6 +13,19 @@
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec git --git-dir={}/.git --work-tree=$PWD/{} status \;
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." \( -exec sh -c 'echo Repo: $PWD/{}; false' \; -false -o -exec git --git-dir={}/.git --work-tree=$PWD/{} pull --no-edit \; \)
 
+# Transform long options to short ones
+for arg in "$@"; do
+    shift
+    case "$arg" in
+        "--help")          set -- "$@" "-h" ;;
+        "--write-remotes") set -- "$@" "-w" ;;
+        "--prune")         set -- "$@" "-p" ;;
+        "--submodules")    set -- "$@" "-s" ;;
+        "--remotes-file")  set -- "$@" "-f" ;;
+        *)                 set -- "$@" "$arg" ;;
+    esac
+done
+
 HELP=0
 WRITE_REMOTES=0
 REMOTES_FILE="git_remotes.sh"
@@ -51,11 +64,21 @@ Options:\n
     -w, Write remotes to file as ready to clone sh script\n
     -p, Prune non existing branches at remote\n
     -s, Also update git submodules\n
+    -f <FILE>, write remotes to specified file\n
+\n
+Long alternative options:\n
+    --help\n
+    --write-remotes\n
+    --prune\n
+    --submodules\n
+    --remotes-file <FILE>\n
 \n
 Examples:\n
     ./pull_all.sh -p -s\n
-    Write remotes of repo list:\n
-    ./pull_all.sh -w -f remotes_file.sh
+    Write remotes of repo list to specified file:\n
+    ./pull_all.sh -w -f remotes_file.sh\n
+    Same with long opts:\n
+    ./pull_all.sh --write-remotes --remotes-file remotes_file.sh\n
 EOF
 )
     echo $USAGE
