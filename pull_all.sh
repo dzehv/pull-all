@@ -22,6 +22,7 @@ for arg in "$@"; do
         "--prune")         set -- "$@" "-p" ;;
         "--submodules")    set -- "$@" "-s" ;;
         "--remotes-file")  set -- "$@" "-f" ;;
+        "--all")           set -- "$@" "-a" ;;
         *)                 set -- "$@" "$arg" ;;
     esac
 done
@@ -31,8 +32,9 @@ WRITE_REMOTES=0
 REMOTES_FILE="git_remotes.sh"
 PRUNE=0
 SUBMODULES=0
+ALL=0
 
-while getopts 'hwpsf:' opt; do
+while getopts 'hwpsaf:' opt; do
     case $opt in
         h) HELP=1
            ;;
@@ -43,6 +45,8 @@ while getopts 'hwpsf:' opt; do
         s) SUBMODULES=1
            ;;
         f) REMOTES_FILE=$OPTARG
+           ;;
+        a) ALL=1
            ;;
         *) echo 'Error in command line parsing' >&2
            exit 1
@@ -64,6 +68,7 @@ Options:\n
     -w, Write remotes to file as ready to clone sh script\n
     -p, Prune non existing branches at remote\n
     -s, Also update git submodules\n
+    -a, Update all local brnaches to their upstream ff-only\n
     -f <FILE>, write remotes to specified file\n
 \n
 Long alternative options:\n
@@ -71,10 +76,11 @@ Long alternative options:\n
     --write-remotes\n
     --prune\n
     --submodules\n
+    --all\n
     --remotes-file <FILE>\n
 \n
 Examples:\n
-    ./pull_all.sh -p -s\n
+    ./pull_all.sh -p -s -a\n
     Write remotes of repo list to specified file:\n
     ./pull_all.sh -w -f remotes_file.sh\n
     Same with long opts:\n
@@ -131,4 +137,13 @@ if [ "$SUBMODULES" -eq 1 ]; then
         # SED="gsed"
     # fi
     find . -type f -name '.gitmodules' | $SED -r 's|/[^/]+$||' | sort | uniq | xargs -I % sh -c 'echo Repo: $PWD/%; git -C $PWD/% submodule update --remote --recursive --merge'
+fi
+
+if [ "$ALL" -eq 1 ]; then
+    if [ -f "git_local_branches_ffwd_update.sh" ]; then
+        echo "\033[90mUpdating all local branches\033[0m"
+        find . -maxdepth 1 -type d -not -path "." -not -path ".." | sort | uniq | xargs -I % sh -c 'echo Repo: $PWD/%; cp git_local_branches_ffwd_update.sh $PWD/%/; cd $PWD/%/; sh git_local_branches_ffwd_update.sh; rm git_local_branches_ffwd_update.sh'
+    else
+        echo "No git update script existing"
+    fi
 fi
