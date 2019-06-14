@@ -107,10 +107,10 @@ if [ "$WRITE_REMOTES" -eq 1 ]; then
 fi
 
 # Since git 1.8.5 we can do the next thing
-# find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git -C {} pull --no-edit \;
+# find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git -C {} pull --no-edit --all \;
 # Update main repositories (always)
 echo "\033[92mUpdating repositories...\033[0m"
-find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git --git-dir={}/.git --work-tree=$PWD/{} pull --no-edit \;
+find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git --git-dir={}/.git --work-tree=$PWD/{} pull --no-edit --all \;
 
 # Prune non existing remote branches (-p arg)
 if [ "$PRUNE" -eq 1 ]; then
