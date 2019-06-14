@@ -91,7 +91,6 @@ EOF
     exit 0
 fi
 
-# TODO: process multiple git remotes
 # Collect repo links and write sh file as ready to git clone command
 if [ "$WRITE_REMOTES" -eq 1 ]; then
     echo "Collecting repos links, writing to clone..."
