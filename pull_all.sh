@@ -141,7 +141,7 @@ fi
 if [ "$ALL" -eq 1 ]; then
     if [ -f "git_local_branches_ffwd_update.sh" ]; then
         echo "\033[90mSync all local branches to their remotes...\033[0m"
-        find . -maxdepth 1 -type d -not -path "." -not -path ".." | sort | uniq | xargs -I % sh -c 'echo Repo: $PWD/%; cp git_local_branches_ffwd_update.sh $PWD/%/; cd $PWD/%/; sh git_local_branches_ffwd_update.sh; rm git_local_branches_ffwd_update.sh'
+        find . -maxdepth 1 -type d -not -path "." -not -path ".." | sort | uniq | xargs -I % sh -c 'echo Repo: $PWD/%; cp git_local_branches_ffwd_update.sh $PWD/%/git_local_branches_ffwd_update_copy.sh; cd $PWD/%/; sh git_local_branches_ffwd_update_copy.sh; rm git_local_branches_ffwd_update_copy.sh'
     else
         echo "No git update script existing"
     fi
