@@ -13,7 +13,7 @@
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec git --git-dir={}/.git --work-tree=$PWD/{} status \;
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." \( -exec sh -c 'echo Repo: $PWD/{}; false' \; -false -o -exec git --git-dir={}/.git --work-tree=$PWD/{} pull --no-edit \; \)
 
-# Transform long options to short ones
+# transform long options to short ones
 for arg in "$@"; do
     shift
     case "$arg" in
@@ -56,7 +56,7 @@ done
 
 shift "$((OPTIND-1))"
 
-# Params after '--' to ARGV
+# params after '--' to ARGV
 [ "${1:-}" = "--" ] && shift
 
 if [ "$HELP" -eq 1 ]; then
@@ -91,18 +91,18 @@ EOF
     exit 0
 fi
 
-# Collect repo links and write sh file as ready to git clone command
+# collect repo links and write sh file as ready to git clone command
 if [ "$WRITE_REMOTES" -eq 1 ]; then
     echo "Collecting repos links, writing to clone..."
     echo "#!/bin/sh\n" > $REMOTES_FILE
-    find . -maxdepth 1 -type d -not -path "." -not -path ".." | sort | uniq | xargs -I % sh -c "git -C $PWD/% remote -v" >> $REMOTES_FILE
-    # Prepare string to clone cmd
+    find . -maxdepth 1 -type d -not -path "." -not -path ".." | sort | uniq | xargs -I % sh -c 'FILE="%"; git -C $PWD/$FILE remote -v' >> $REMOTES_FILE
+    # prepare string to clone cmd
     sed -i -e 's/origin[[:space:]]/git clone /g' -e 's/[[:space:]](fetch)//g' -e 's/[[:space:]](push)//g' $REMOTES_FILE
 
-    # Remove duplicate lines (if uniq is not working)
+    # remove duplicate lines (if uniq is not working)
 
     # delete duplicate, consecutive lines from a file (emulates "uniq").
-    # First line in a set of duplicate lines is kept, rest are deleted.
+    # first line in a set of duplicate lines is kept, rest are deleted.
     sed -i '$!N; /^\(.*\)\n\1$/!P; D' $REMOTES_FILE
     # delete duplicate, nonconsecutive lines from a file. Beware not to
     # overflow the buffer size of the hold space, or else use GNU sed.
@@ -111,9 +111,9 @@ if [ "$WRITE_REMOTES" -eq 1 ]; then
     exit 0
 fi
 
-# Since git 1.8.5 we can do the next thing
+# since git 1.8.5 we can do the next thing
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git -C {} pull --no-edit --all \;
-# Update main repositories (always)
+# NOTE: update main repositories (always)
 echo "\033[92mUpdating repositories...\033[0m"
 find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git --git-dir={}/.git --work-tree=$PWD/{} pull --no-edit --all \;
 
@@ -123,7 +123,7 @@ if [ "$PRUNE" -eq 1 ]; then
     find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git --git-dir={}/.git --work-tree=$PWD/{} fetch -p --all \;
 fi
 
-# And submodules update (-s arg)
+# submodules update (-s arg)
 if [ "$SUBMODULES" -eq 1 ]; then
     echo "\033[91mUpdating submodules...\033[0m"
     SED="sed"
@@ -135,13 +135,14 @@ if [ "$SUBMODULES" -eq 1 ]; then
     # if [ -z "${OSTYPE##*darwin*}" ]; then
         # SED="gsed"
     # fi
-    find . -type f -name '.gitmodules' | $SED -r 's|/[^/]+$||' | sort | uniq | xargs -I % sh -c 'echo Repo: $PWD/%; git -C $PWD/% submodule update --remote --recursive --merge'
+    find . -type f -name '.gitmodules' | $SED -r 's|/[^/]+$||' | sort | uniq | xargs -I % sh -c 'FILE="%"; echo Repo: $PWD/$FILE; git -C $PWD/$FILE submodule update --remote --recursive --merge'
 fi
 
+# remote branches update (-a arg)
 if [ "$ALL" -eq 1 ]; then
     if [ -f "git_local_branches_ffwd_update.sh" ]; then
         echo "\033[90mSync all local branches to their remotes...\033[0m"
-        find . -maxdepth 1 -type d -not -path "." -not -path ".." | sort | uniq | xargs -I % sh -c 'FILE="%"; echo Repo: $PWD/$FILE; cp git_local_branches_ffwd_update.sh $PWD/$FILE/git_local_branches_ffwd_update_copy.sh; cd $PWD/$FILE/; sh git_local_branches_ffwd_update_copy.sh; rm git_local_branches_ffwd_update_copy.sh'
+        find . -maxdepth 1 -type d -not -path "." -not -path ".." | sort | uniq | xargs -I % sh -c 'FILE="%"; SCRIPT="git_local_branches_ffwd_update.sh"; SCRIPT_COPY="git_local_branches_ffwd_update_copy.sh"; echo Repo: $PWD/$FILE; cp $SCRIPT $PWD/$FILE/$SCRIPT_COPY; cd $PWD/$FILE/; sh $SCRIPT_COPY; rm $SCRIPT_COPY'
     else
         echo "No git update script existing"
     fi
