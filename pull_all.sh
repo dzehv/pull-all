@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# Simple script to pull all git subdirectories with submodules if exists
-# Also can prune non existing remote branches
+# simple script to pull all git subdirectories (with submodules if exists)
+# also can prune non existing remote branches
 # USAGE:
 # ./pull_all.sh -p -s
 # WRITE remotes of repo list:
@@ -9,14 +9,15 @@
 
 # NOTE: if the -depth 1 option is not available, try -mindepth 1 -maxdepth 1.
 
-# find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec echo $PWD/{} \;
-# find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec git --git-dir={}/.git --work-tree=$PWD/{} status \;
-# find . -maxdepth 1 -type d -not -path "." -not -path ".." \( -exec sh -c 'echo Repo: $PWD/{}; false' \; -false -o -exec git --git-dir={}/.git --work-tree=$PWD/{} pull --no-edit \; \)
+# find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec echo $DIR/{} \;
+# find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec git --git-dir={}/.git --work-tree=$DIR/{} status \;
+# find . -maxdepth 1 -type d -not -path "." -not -path ".." \( -exec sh -c 'echo Repo: $DIR/{}; false' \; -false -o -exec git --git-dir={}/.git --work-tree=$DIR/{} pull --no-edit \; \)
 
 # transform long options to short ones
 for arg in "$@"; do
     shift
     case "$arg" in
+        "--dir")           set -- "$@" "-d" ;;
         "--help")          set -- "$@" "-h" ;;
         "--write-remotes") set -- "$@" "-w" ;;
         "--prune")         set -- "$@" "-p" ;;
@@ -27,6 +28,8 @@ for arg in "$@"; do
     esac
 done
 
+# defaults
+DIR="."
 HELP=0
 WRITE_REMOTES=0
 REMOTES_FILE="git_remotes.sh"
@@ -34,8 +37,11 @@ PRUNE=0
 SUBMODULES=0
 ALL=0
 
-while getopts 'hwpsaf:' opt; do
+# and parse at least
+while getopts 'd:hwpsaf:' opt; do
     case $opt in
+        d) DIR=$OPTARG
+           ;;
         h) HELP=1
            ;;
         w) WRITE_REMOTES=1
@@ -64,6 +70,7 @@ if [ "$HELP" -eq 1 ]; then
 Usage: ./$(basename $0) [OPTIONS]\n
 \n
 Options:\n
+    -d, Specify parent dir to search for repos\n
     -h, Show this text\n
     -w, Write remotes to file as ready to clone sh script\n
     -p, Prune non existing branches at remote\n
@@ -72,6 +79,7 @@ Options:\n
     -f <FILE>, write remotes to specified file\n
 \n
 Long alternative options:\n
+    --dir <PATH>\n
     --help\n
     --write-remotes\n
     --prune\n
@@ -85,6 +93,8 @@ Examples:\n
     ./pull_all.sh -w -f remotes_file.sh\n
     Same with long opts:\n
     ./pull_all.sh --write-remotes --remotes-file remotes_file.sh\n
+    With specified dir\n
+    ./pull_all.sh --dir /home/user/gitrepos\n
 EOF
 )
     echo $USAGE
@@ -95,7 +105,7 @@ fi
 if [ "$WRITE_REMOTES" -eq 1 ]; then
     echo "Collecting repos links, writing to clone..."
     echo "#!/bin/sh\n" > $REMOTES_FILE
-    find . -maxdepth 1 -type d -not -path "." -not -path ".." | sort | uniq | xargs -I % sh -c 'FILE="%"; git -C $PWD/$FILE remote -v' >> $REMOTES_FILE
+    find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" | sort | uniq | xargs -I % sh -c 'FILE="%"; git -C $DIR/$FILE remote -v' >> $REMOTES_FILE
     # prepare string to clone cmd
     sed -i -e 's/origin[[:space:]]/git clone /g' -e 's/[[:space:]](fetch)//g' -e 's/[[:space:]](push)//g' $REMOTES_FILE
 
@@ -112,15 +122,15 @@ if [ "$WRITE_REMOTES" -eq 1 ]; then
 fi
 
 # since git 1.8.5 we can do the next thing
-# find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git -C {} pull --no-edit --all \;
+# find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $DIR/{}; true' \; -exec git -C {} pull --no-edit --all \;
 # NOTE: update main repositories (always)
 echo "\033[92mUpdating repositories...\033[0m"
-find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git --git-dir={}/.git --work-tree=$PWD/{} pull --no-edit --all \;
+find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" -exec sh -c 'echo Repo: {}; true' \; -exec git --git-dir={}/.git --work-tree={} pull --no-edit --all \;
 
 # Prune non existing remote branches (-p arg)
 if [ "$PRUNE" -eq 1 ]; then
     echo "\033[95mPrune non existing branches...\033[0m"
-    find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec sh -c 'echo Repo: $PWD/{}; true' \; -exec git --git-dir={}/.git --work-tree=$PWD/{} fetch -p --all \;
+    find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" -exec sh -c 'echo Repo: {}; true' \; -exec git --git-dir={}/.git --work-tree={} fetch -p --all \;
 fi
 
 # submodules update (-s arg)
@@ -135,14 +145,15 @@ if [ "$SUBMODULES" -eq 1 ]; then
     # if [ -z "${OSTYPE##*darwin*}" ]; then
         # SED="gsed"
     # fi
-    find . -type f -name '.gitmodules' | $SED -r 's|/[^/]+$||' | sort | uniq | xargs -I % sh -c 'FILE="%"; echo Repo: $PWD/$FILE; git -C $PWD/$FILE submodule update --remote --recursive --merge'
+    find $DIR -type f -name '.gitmodules' | $SED -r 's|/[^/]+$||' | sort | uniq | xargs -I % sh -c 'FILE="%"; echo Repo: $FILE; git -C $FILE submodule update --remote --recursive --merge'
 fi
 
+# TODO: evaluate 'SCRIPT' code here instead of file copying
 # remote branches update (-a arg)
 if [ "$ALL" -eq 1 ]; then
     if [ -f "git_local_branches_ffwd_update.sh" ]; then
         echo "\033[90mSync all local branches to their remotes...\033[0m"
-        find . -maxdepth 1 -type d -not -path "." -not -path ".." | sort | uniq | xargs -I % sh -c 'FILE="%"; SCRIPT="git_local_branches_ffwd_update.sh"; SCRIPT_COPY="git_local_branches_ffwd_update_copy.sh"; echo Repo: $PWD/$FILE; cp $SCRIPT $PWD/$FILE/$SCRIPT_COPY; cd $PWD/$FILE/; sh $SCRIPT_COPY; rm $SCRIPT_COPY'
+        find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" | sort | uniq | xargs -I % sh -c 'FILE="%"; SCRIPT="git_local_branches_ffwd_update.sh"; SCRIPT_COPY="git_local_branches_ffwd_update_copy.sh"; echo Repo: $FILE; cp $SCRIPT $FILE/$SCRIPT_COPY; cd $FILE/; sh $SCRIPT_COPY; rm $SCRIPT_COPY'
     else
         echo "No git update script existing"
     fi

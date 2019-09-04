@@ -1,23 +1,5 @@
 # Pull all git subdirectories
 
-Place scripts to repositories root dir:
-
-``` shell
-cp pull_all.sh git_local_branches_ffwd_update.sh repos_root_folder/
-```
-
-Looks like this:
-
-``` shell
-.
-..
-some_repo_folder1
-some_repo_folder2
-some_repo_folder3
-pull_all.sh
-git_local_branches_ffwd_update.sh
-```
-
 ### USAGE:
 
 ``` shell
@@ -26,6 +8,7 @@ git_local_branches_ffwd_update.sh
 
 #### Options:
 
+    -d, Specify parent dir to search for repos ("." by default)
     -h, Show this text
     -w, Write remotes to file as ready to clone sh script
     -p, Prune non existing branches at remote
@@ -35,6 +18,7 @@ git_local_branches_ffwd_update.sh
 
 #### Long alternative options:
 
+    --dir <PATH>
     --help
     --write-remotes
     --prune
@@ -58,4 +42,8 @@ Same with long opts:
 
 ``` shell
 ./pull_all.sh --write-remotes --remotes-file remotes_file.sh
+```
+
+``` shell
+./pull_all.sh --dir /home/user/gitrepos --prune --all
 ```
