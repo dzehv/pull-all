@@ -1,4 +1,4 @@
-# Pull all git subdirectories
+# Update git subdirectories
 
 ### USAGE:
 
