@@ -1,9 +1,15 @@
 # Update git subdirectories
 
-### USAGE:
+### Install:
 
 ``` shell
-./pull_all.sh [OPTIONS]
+sudo make install
+```
+
+### Usage:
+
+``` shell
+pull_all [OPTIONS]
 ```
 
 #### Options:
@@ -13,7 +19,7 @@
     -w, Write remotes to file as ready to clone sh script
     -p, Prune non existing branches at remote
     -s, Also update git submodules
-    -a, Update all local brnaches to their upstream ff-only
+    -l, Update all local brnaches to their upstream ff-only
     -f <FILE>, write remotes to specified file
 
 #### Long alternative options:
@@ -23,27 +29,27 @@
     --write-remotes
     --prune
     --submodules
-    --all
+    --local-branches
     --remotes-file <FILE>
 
 #### Examples:
 
 ``` shell
-./pull_all.sh -p -s -a
+pull_all -p -s -l
 ```
 
 Write remotes of repo list to specified file:
 
 ``` shell
-./pull_all.sh -w -f remotes_file.sh
+pull_all -w -f remotes_file.sh
 ```
 
 Same with long opts:
 
 ``` shell
-./pull_all.sh --write-remotes --remotes-file remotes_file.sh
+pull_all --write-remotes --remotes-file remotes_file.sh
 ```
 
 ``` shell
-./pull_all.sh --dir /home/user/gitrepos --prune --all
+pull_all --dir /home/user/gitrepos --prune --local-branches
 ```
