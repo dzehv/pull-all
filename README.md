@@ -14,7 +14,7 @@ pull_all [OPTIONS]
 
 #### Options:
 
-    -d, Specify parent dir to search for repos ("." by default)
+    -d, Specify parent dir to search for repos (mandatory option)
     -h, Show this text
     -w, Write remotes to file as ready to clone sh script
     -p, Prune non existing branches at remote
@@ -35,19 +35,25 @@ pull_all [OPTIONS]
 #### Examples:
 
 ``` shell
-pull_all -p -s -l
+pull_all -d ~/gitrepos -p -s -l
+```
+
+Bundling options:
+
+``` shell
+pull_all -d ~/gitrepos -psl
 ```
 
 Write remotes of repo list to specified file:
 
 ``` shell
-pull_all -w -f remotes_file.sh
+pull_all -d ~/gitrepos -w -f remotes_file.sh
 ```
 
 Same with long opts:
 
 ``` shell
-pull_all --write-remotes --remotes-file remotes_file.sh
+pull_all --dir ~/gitrepos --write-remotes --remotes-file remotes_file.sh
 ```
 
 ``` shell

@@ -1,13 +1,17 @@
 #!/bin/bash
 
-# DESCRIPTION: an ugly tool to provide some git updates with multiple repositories in one dir
-
-# NOTE: if the -depth 1 option is not available, try -mindepth 1 -maxdepth 1.
-# find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec echo $DIR/{} \;
-# find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec git --git-dir={}/.git --work-tree=$DIR/{} status \;
-# find . -maxdepth 1 -type d -not -path "." -not -path ".." \
-    # \( -exec sh -c 'echo Repo: $DIR/{}; false' \; -false \
-    # -o -exec git --git-dir={}/.git --work-tree=$DIR/{} pull --no-edit \; \)
+##############################################################################################################################
+#                                                                                                                            #
+# DESCRIPTION: an ugly tool to provide some git updates with multiple repositories in one dir                                #
+#                                                                                                                            #
+# NOTE: if the -depth 1 option is not available, try -mindepth 1 -maxdepth 1.                                                #
+# find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec echo $DIR/{} \;                                            #
+# find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec git --git-dir={}/.git --work-tree=$DIR/{} status \;        #
+# find . -maxdepth 1 -type d -not -path "." -not -path ".." \                                                                #
+#    \( -exec sh -c 'echo Repo: $DIR/{}; false' \; -false \                                                                  #
+#    -o -exec git --git-dir={}/.git --work-tree=$DIR/{} pull --no-edit \; \)                                                 #
+#                                                                                                                            #
+##############################################################################################################################
 
 # transform long options to short ones
 for arg in "$@"; do
@@ -26,7 +30,7 @@ done
 
 
 # defaults
-DIR=".";
+DIR="";
 HELP=0;
 WRITE_REMOTES=0;
 REMOTES_FILE="git_remotes.sh";
@@ -52,9 +56,15 @@ while getopts 'd:hwpslf:' opt; do
            ;;
         l) LOCAL_BRANCHES_UPDATE=1
            ;;
-        *) echo 'Error in command line parsing' >&2
-           exit 1
-           ;;
+        \?) echo "Unknown option: -$OPTARG" >&2;
+             exit 1
+             ;;
+        :) echo "Missing option argument for -$OPTARG" >&2;
+            exit 1
+            ;;
+        *) echo "Unimplemented option: -$OPTARG" >&2;
+            exit 1
+            ;;
     esac
 done
 
@@ -63,13 +73,19 @@ shift "$((OPTIND-1))";
 # params after '--' to ARGV
 [ "${1:-}" = "--" ] && shift;
 
+# dir option must have
+if [ ! "$DIR" ]; then
+    echo "Mandatory argument -d (--dir) missing" >&2;
+    exit 1;
+fi
+
 
 if [ "$HELP" -eq 1 ]; then
     USAGE=$(cat << EOF
 Usage: $(basename $0) [OPTIONS]\n
 \n
 Options:\n
-    -d, Specify parent dir to search for repos\n
+    -d, Specify parent dir to search for repos (mandatory option)\n
     -h, Show this text\n
     -w, Write remotes to file as ready to clone sh script\n
     -p, Prune non existing branches at remote\n
@@ -87,11 +103,13 @@ Long alternative options:\n
     --remotes-file <FILE>\n
 \n
 Examples:\n
-    pull_all -p -s -l\n
+    pull_all -d ~/gitrepos -p -s -l\n
+    Bundling options:\n
+    pull_all -d ~/gitrepos -psl\n
     Write remotes of repo list to specified file:\n
-    pull_all -w -f remotes_file.sh\n
+    pull_all -d ~/gitrepos -w -f remotes_file.sh\n
     Same with long opts:\n
-    pull_all --write-remotes --remotes-file remotes_file.sh\n
+    pull_all --dir ~/gitrepos --write-remotes --remotes-file remotes_file.sh\n
     With specified dir\n
     pull_all --dir /home/user/gitrepos\n
 EOF
