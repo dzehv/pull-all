@@ -8,7 +8,7 @@
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec echo $DIR/{} \;                                            #
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec git --git-dir={}/.git --work-tree=$DIR/{} status \;        #
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." \                                                                #
-#    \( -exec sh -c 'echo Repo: $DIR/{}; false' \; -false \                                                                  #
+#    \( -exec sh -c 'echo Path: $DIR/{}; false' \; -false \                                                                  #
 #    -o -exec git --git-dir={}/.git --work-tree=$DIR/{} pull --no-edit \; \)                                                 #
 #                                                                                                                            #
 ##############################################################################################################################
@@ -137,11 +137,11 @@ main() {
 
         # remove duplicate lines (if uniq is not working)
 
-        # delete duplicate, consecutive lines from a file (emulates "uniq").
-        # first line in a set of duplicate lines is kept, rest are deleted.
+        # delete duplicate, consecutive lines from a file (emulates "uniq")
+        # first line in a set of duplicate lines is kept, rest are deleted
         sed -i '$!N; /^\(.*\)\n\1$/!P; D' $REMOTES_FILE;
         # delete duplicate, nonconsecutive lines from a file. Beware not to
-        # overflow the buffer size of the hold space, or else use GNU sed.
+        # overflow the buffer size of the hold space, or else use GNU sed
         # sed -i -n 'G; s/\n/&&/; /^\([ -~]*\n\).*\n\1/d; s/\n//; h; P' remotes.sh
         chmod +x $REMOTES_FILE;
         exit 0;
@@ -150,20 +150,20 @@ main() {
 
     # NOTE: since git 1.8.5 we can do the next thing
     # find . -maxdepth 1 -type d -not -path "." -not -path ".." \
-        # -exec sh -c 'echo Repo: $DIR/{}; true' \; -exec git -C {} pull --no-edit --all \;
+        # -exec sh -c 'echo Path: $DIR/{}; true' \; -exec git -C {} pull --no-edit --all \;
 
     # update main repositories (always)
     echo -e "\033[92mUpdating repositories...\033[0m";
     find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" \
-         -exec sh -c 'echo Repo: {}; true' \; \
-         -exec git --git-dir={}/.git --work-tree={} pull --no-edit --all \;
+         -exec sh -c 'echo Path: {}; true' \; \
+         -exec git --git-dir={}/.git --work-tree={} pull --no-edit --all \; 2>/dev/null
 
     # prune non existing remote branches (-p arg)
     if [ "$PRUNE" -eq 1 ]; then
         echo -e "\033[95mPrune non existing branches...\033[0m";
         find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" \
-             -exec sh -c 'echo Repo: {}; true' \; \
-             -exec git --git-dir={}/.git --work-tree={} fetch -p --all \;
+             -exec sh -c 'echo Path: {}; true' \; \
+             -exec git --git-dir={}/.git --work-tree={} fetch -p --all \; 2>/dev/null
     fi
 
     # submodules update (-s arg)
@@ -180,15 +180,15 @@ main() {
         # fi
         find $DIR -type f -name '.gitmodules' \
             | $SED -r 's|/[^/]+$||' | sort | uniq \
-            | xargs -I % sh -c 'FILE="%"; echo Repo: $FILE; git -C $FILE submodule update --remote --recursive --merge';
+            | xargs -I % sh -c 'FILE="%"; echo Path: $FILE; git -C $FILE submodule update --remote --recursive --merge'; 2>/dev/null
     fi
 
     # all local branches update to their remotes (-a arg)
     if [ "$LOCAL_BRANCHES_UPDATE" -eq 1 ]; then
         echo -e "\033[90mSync all local branches to their remotes...\033[0m";
         find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" \
-             -exec sh -c 'echo Repo: {}; true' \; \
-             -exec bash -c "git_ffwd {}" {} \;
+             -exec sh -c 'echo Path: {}; true' \; \
+             -exec bash -c "git_ffwd {}" {} \; 2>/dev/null
     fi
 }
 
@@ -223,7 +223,7 @@ git_ffwd() {
     done
 }
 
-# yes, only 'bash' required to export functions
+# 'bash' required to export functions
 export -f git_ffwd;
 
 main "$@";
