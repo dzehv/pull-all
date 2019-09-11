@@ -2,7 +2,8 @@
 
 ##############################################################################################################################
 #                                                                                                                            #
-# DESCRIPTION: an ugly tool to provide some git updates with multiple repositories in one dir (scan depth -> 1)              #
+# DESCRIPTION: an ugly tool to provide some git updates with multiple repositories in one dir                                #
+# MODES: recursive & depth1 (see help)                                                                                       #
 #                                                                                                                            #
 # NOTE: if the -depth 1 option is not available, try -mindepth 1 -maxdepth 1.                                                #
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec echo $DIR/{} \;                                            #
@@ -24,6 +25,7 @@ for arg in "$@"; do
         "--submodules")     set -- "$@" "-s" ;;
         "--remotes-file")   set -- "$@" "-f" ;;
         "--local-branches") set -- "$@" "-l" ;;
+        "--recursive")      set -- "$@" "-r" ;;
         *)                  set -- "$@" "$arg" ;;
     esac
 done
@@ -37,10 +39,11 @@ REMOTES_FILE="git_remotes.sh";
 PRUNE=0;
 SUBMODULES=0;
 LOCAL_BRANCHES_UPDATE=0;
+RECURSIVE=0
 
 
 # and parse at least
-while getopts 'd:hwpslf:' opt; do
+while getopts 'd:hwpslrf:' opt; do
     case $opt in
         d) DIR=$OPTARG
            ;;
@@ -55,6 +58,8 @@ while getopts 'd:hwpslf:' opt; do
         f) REMOTES_FILE=$OPTARG
            ;;
         l) LOCAL_BRANCHES_UPDATE=1
+           ;;
+        r) RECURSIVE=1
            ;;
         \?) echo "Unknown option: -$OPTARG" >&2;
              exit 1
@@ -73,12 +78,6 @@ shift "$((OPTIND-1))";
 # params after '--' to ARGV
 [ "${1:-}" = "--" ] && shift;
 
-# dir option must have
-if [ ! "$DIR" ]; then
-    echo "Mandatory argument -d (--dir) missing" >&2;
-    exit 1;
-fi
-
 
 if [ "$HELP" -eq 1 ]; then
     USAGE=$(cat << EOF
@@ -90,8 +89,9 @@ Options:\n
     -w, Write remotes to file as ready to clone sh script\n
     -p, Prune non existing branches at remote\n
     -s, Also update git submodules\n
-    -l, Update all local brnaches to their upstream ff-only\n
+    -l, Update all local branches to their upstream ff-only\n
     -f <FILE>, write remotes to specified file\n
+    -r find repositories recursively and update them\n
 \n
 Long alternative options:\n
     --dir <PATH>\n
@@ -101,6 +101,7 @@ Long alternative options:\n
     --submodules\n
     --local-branches\n
     --remotes-file <FILE>\n
+    --recursive\n
 \n
 Examples:\n
     pull_all -d ~/gitrepos -p -s -l\n
@@ -119,12 +120,26 @@ EOF
 fi
 
 
-main() {
-    if [ ! -d "$DIR" ]; then
-        echo "Dir [$DIR] not found, nothing to do.";
-        exit 1;
-    fi
+# dir option must have
+if [ ! "$DIR" ]; then
+    echo "Mandatory argument -d (--dir) missing" >&2;
+    exit 1;
+elif [ ! -d "$DIR" ]; then
+    echo "Dir [$DIR] not found, nothing to do.";
+    exit 1;
+fi
 
+
+main() {
+    if [ "$RECURSIVE" -eq 1 ]; then
+        recursive;
+    else
+        depth1;
+    fi
+}
+
+
+depth1() {
     # collect repo links and write sh file as ready to git clone command
     if [ "$WRITE_REMOTES" -eq 1 ]; then
         echo "Collecting repos links, writing to clone...";
@@ -190,6 +205,15 @@ main() {
              -exec sh -c 'echo Path: {}; true' \; \
              -exec bash -c "git_ffwd {}" {} \; 2>/dev/null
     fi
+}
+
+
+recursive() {
+    # TODO: implement prune, submodules, remotes write, etc.
+    echo -e "\033[92mFinding and updating repositories recursively...\033[0m";
+    find $DIR -type d -name ".git" \
+         -exec sh -c 'echo Path: {}; true' \; \
+         -exec git --git-dir={} --work-tree={} pull --no-edit --all \; 2>/dev/null
 }
 
 

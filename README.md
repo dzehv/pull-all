@@ -19,8 +19,9 @@ pull_all [OPTIONS]
     -w, Write remotes to file as ready to clone sh script
     -p, Prune non existing branches at remote
     -s, Also update git submodules
-    -l, Update all local brnaches to their upstream ff-only
+    -l, Update all local branches to their upstream ff-only
     -f <FILE>, write remotes to specified file
+    -r find repositories recursively and update them
 
 #### Long alternative options:
 
@@ -31,6 +32,7 @@ pull_all [OPTIONS]
     --submodules
     --local-branches
     --remotes-file <FILE>
+    --recursive
 
 #### Examples:
 
