@@ -2,7 +2,7 @@
 
 ##############################################################################################################################
 #                                                                                                                            #
-# DESCRIPTION: an ugly tool to provide some git updates with multiple repositories in one dir                                #
+# DESCRIPTION: an ugly tool to provide some git updates with multiple repositories in one dir (scan depth -> 1)              #
 #                                                                                                                            #
 # NOTE: if the -depth 1 option is not available, try -mindepth 1 -maxdepth 1.                                                #
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec echo $DIR/{} \;                                            #
@@ -120,6 +120,11 @@ fi
 
 
 main() {
+    if [ ! -d "$DIR" ]; then
+        echo "Dir [$DIR] not found, nothing to do.";
+        exit 1;
+    fi
+
     # collect repo links and write sh file as ready to git clone command
     if [ "$WRITE_REMOTES" -eq 1 ]; then
         echo "Collecting repos links, writing to clone...";
@@ -205,12 +210,12 @@ git_ffwd() {
             NAHEAD=$(( $(git --git-dir=$REPO/.git --work-tree=$REPO rev-list --count $ARB..$ALB 2>/dev/null) +0));
             if [ "$NBEHIND" -gt 0 ]; then
                 if [ "$NAHEAD" -gt 0 ]; then
-                    echo " Branch $LB is $NBEHIND commit(s) behind and $NAHEAD commit(s) ahead of $REMOTE/$RB. Could not be fast-forwarded";
+                    echo -e "\033[34mBranch $LB is $NBEHIND commit(s) behind and $NAHEAD commit(s) ahead of $REMOTE/$RB. Could not be fast-forwarded\033[0m";
                 elif [ "$LB" = "$CLB" ]; then
-                    echo " Branch $LB was $NBEHIND commit(s) behind of $REMOTE/$RB. Fast-forward merge";
+                    echo -e "\033[34mBranch $LB was $NBEHIND commit(s) behind of $REMOTE/$RB. Fast-forward merge\033[0m";
                     git --git-dir=$REPO/.git --work-tree=$REPO merge -q $ARB;
                 else
-                    echo " Branch $LB was $NBEHIND commit(s) behind of $REMOTE/$RB. Resetting local branch to remote";
+                    echo -e "\033[34mBranch $LB was $NBEHIND commit(s) behind of $REMOTE/$RB. Resetting local branch to remote\033[0m";
                     git --git-dir=$REPO/.git --work-tree=$REPO branch -f $LB -t $ARB >/dev/null;
                 fi
             fi
