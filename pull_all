@@ -141,23 +141,13 @@ main() {
 
 depth1() {
     # collect repo links and write sh file as ready to git clone command
+    # NOTE: works only with 'origin' remote name
     if [ "$WRITE_REMOTES" -eq 1 ]; then
         echo "Collecting repos links, writing to clone...";
-        echo "#!/bin/sh\n" > $REMOTES_FILE;
+        echo "#!/bin/bash" > $REMOTES_FILE;
         find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" \
-            | sort | uniq | xargs -I % sh -c 'FILE="%"; git -C $DIR/$FILE remote -v' >> $REMOTES_FILE;
-        # prepare string to clone cmd
-        sed -i -e 's/origin[[:space:]]/git clone /g' \
-            -e 's/[[:space:]](fetch)//g' -e 's/[[:space:]](push)//g' $REMOTES_FILE;
-
-        # remove duplicate lines (if uniq is not working)
-
-        # delete duplicate, consecutive lines from a file (emulates "uniq")
-        # first line in a set of duplicate lines is kept, rest are deleted
-        sed -i '$!N; /^\(.*\)\n\1$/!P; D' $REMOTES_FILE;
-        # delete duplicate, nonconsecutive lines from a file. Beware not to
-        # overflow the buffer size of the hold space, or else use GNU sed
-        # sed -i -n 'G; s/\n/&&/; /^\([ -~]*\n\).*\n\1/d; s/\n//; h; P' remotes.sh
+            | sort | uniq | \
+            xargs -I % sh -c 'FILE="%"; echo "git clone $(git -C $DIR/$FILE remote get-url origin)"' >> $REMOTES_FILE;
         chmod +x $REMOTES_FILE;
         exit 0;
     fi
