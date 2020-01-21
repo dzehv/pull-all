@@ -32,7 +32,7 @@ done
 
 
 # defaults
-DIR="";
+DIRS=();
 HELP=0;
 WRITE_REMOTES=0;
 REMOTES_FILE="git_remotes.sh";
@@ -45,7 +45,7 @@ RECURSIVE=0
 # and parse at least
 while getopts 'd:hwpslrf:' opt; do
     case $opt in
-        d) DIR=$OPTARG
+        d) DIRS+=("$OPTARG")
            ;;
         h) HELP=1
            ;;
@@ -84,7 +84,7 @@ if [ "$HELP" -eq 1 ]; then
 Usage: $(basename $0) [OPTIONS]\n
 \n
 Options:\n
-    -d, Specify parent dir to search for repos (mandatory option)\n
+    -d, Specify parent dir to search for repos (mandatory option, also can be accepted as multiple)\n
     -h, Show this text\n
     -w, Write remotes to file as ready to clone sh script\n
     -p, Prune non existing branches at remote\n
@@ -104,7 +104,7 @@ Long alternative options:\n
     --recursive\n
 \n
 Examples:\n
-    pull_all -d ~/gitrepos -p -s -l\n
+    pull_all -d ~/gitrepos -d ~/github_repos -p -s -l\n
     Bundling options:\n
     pull_all -d ~/gitrepos -psl\n
     Write remotes of repo list to specified file:\n
@@ -112,7 +112,7 @@ Examples:\n
     Same with long opts:\n
     pull_all --dir ~/gitrepos --write-remotes --remotes-file remotes_file.sh\n
     With specified dir\n
-    pull_all --dir /home/user/gitrepos\n
+    pull_all --dir  /home/user/gitrepos --dir /home/user/github_repos\n
 EOF
          );
     echo $USAGE;
@@ -121,14 +121,18 @@ fi
 
 
 # dir option must have
-if [ ! "$DIR" ]; then
-    echo "Mandatory argument -d (--dir) missing" >&2;
-    exit 1;
-elif [ ! -d "$DIR" ]; then
-    echo "Dir [$DIR] not found, nothing to do.";
+DIRS_LEN=${#DIRS[@]}
+if [ $DIRS_LEN -lt 1 ]; then
+    echo "Mandatory argument(s) -d (--dir) missing" >&2;
     exit 1;
 fi
+echo "Dirs to update: ${DIRS[@]}";
 
+for path in "${DIRS[@]}"; do
+    if [ ! -d "$path" ]; then
+        echo "Dir [$path] not found, nothing to do.";
+    fi
+done
 
 main() {
     if [ "$RECURSIVE" -eq 1 ]; then
@@ -145,9 +149,11 @@ depth1() {
     if [ "$WRITE_REMOTES" -eq 1 ]; then
         echo "Collecting repos links, writing to clone...";
         echo "#!/bin/bash" > $REMOTES_FILE;
-        find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" \
-            | sort | uniq | \
-            xargs -I % sh -c 'FILE="%"; echo "git clone $(git -C $DIR/$FILE remote get-url origin)"' >> $REMOTES_FILE;
+        for DIR in "${DIRS[@]}"; do
+            find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" \
+                | sort | uniq | \
+                xargs -I % sh -c 'FILE="%"; echo "git clone $(git -C $DIR/$FILE remote get-url origin)"' >> $REMOTES_FILE;
+        done
         chmod +x $REMOTES_FILE;
         exit 0;
     fi
@@ -159,18 +165,22 @@ depth1() {
 
     # update main repositories (always)
     echo -e "\033[92mUpdating repositories...\033[0m";
-    find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" \
-         -exec sh -c 'echo Path: {}; true' \; \
-         -exec git --git-dir={}/.git --work-tree={} pull --no-edit --all \; 2>/dev/null
+    for DIR in "${DIRS[@]}"; do
+        find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" \
+             -exec sh -c 'echo Path: {}; true' \; \
+             -exec git --git-dir={}/.git --work-tree={} pull --no-edit --all \; 2>/dev/null
+    done
 
     # prune non existing remote branches (-p arg)
     # NOTE: to prune automatically on fetch or pull needs to set git config option:
     # git config remote.origin.prune true
     if [ "$PRUNE" -eq 1 ]; then
         echo -e "\033[95mPrune non existing branches...\033[0m";
-        find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" \
-             -exec sh -c 'echo Path: {}; true' \; \
-             -exec git --git-dir={}/.git --work-tree={} fetch -p --all \; 2>/dev/null
+        for DIR in "${DIRS[@]}"; do
+            find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" \
+                 -exec sh -c 'echo Path: {}; true' \; \
+                 -exec git --git-dir={}/.git --work-tree={} fetch -p --all \; 2>/dev/null
+        done
     fi
 
     # submodules update (-s arg)
@@ -185,17 +195,21 @@ depth1() {
         # if [ -z "${OSTYPE##*darwin*}" ]; then
         # SED="gsed"
         # fi
-        find $DIR -type f -name '.gitmodules' \
-            | $SED -r 's|/[^/]+$||' | sort | uniq \
-            | xargs -I % sh -c 'FILE="%"; echo Path: $FILE; git -C $FILE submodule update --remote --recursive --merge'; 2>/dev/null
+        for DIR in "${DIRS[@]}"; do
+            find $DIR -type f -name '.gitmodules' \
+                | $SED -r 's|/[^/]+$||' | sort | uniq \
+                | xargs -I % sh -c 'FILE="%"; echo Path: $FILE; git -C $FILE submodule update --remote --recursive --merge'; 2>/dev/null
+        done
     fi
 
     # all local branches update to their remotes (-a arg)
     if [ "$LOCAL_BRANCHES_UPDATE" -eq 1 ]; then
         echo -e "\033[90mSync all local branches to their remotes...\033[0m";
-        find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" \
-             -exec sh -c 'echo Path: {}; true' \; \
-             -exec bash -c "git_ffwd {}" {} \; 2>/dev/null
+        for DIR in "${DIRS[@]}"; do
+            find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" \
+                 -exec sh -c 'echo Path: {}; true' \; \
+                 -exec bash -c "git_ffwd {}" {} \; 2>/dev/null
+        done
     fi
 }
 
@@ -203,9 +217,11 @@ depth1() {
 recursive() {
     # TODO: implement prune, submodules, remotes write, etc.
     echo -e "\033[92mFinding and updating repositories recursively...\033[0m";
-    find $DIR -type d -name ".git" \
-         -exec sh -c 'echo Path: {}; true' \; \
-         -exec git --git-dir={} --work-tree={} pull --no-edit --all \; 2>/dev/null
+    for DIR in "${DIRS[@]}"; do
+        find $DIR -type d -name ".git" \
+             -exec sh -c 'echo Path: {}; true' \; \
+             -exec git --git-dir={} --work-tree={} pull --no-edit --all \; 2>/dev/null
+    done
 }
 
 
