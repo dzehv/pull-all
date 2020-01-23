@@ -126,11 +126,19 @@ if [ $DIRS_LEN -lt 1 ]; then
     echo "Mandatory argument(s) -d (--dir) missing" >&2;
     exit 1;
 fi
-echo "Dirs to update: ${DIRS[@]}";
 
+# validate dirs exists
 for path in "${DIRS[@]}"; do
     if [ ! -d "$path" ]; then
-        echo "Dir [$path] not found, nothing to do.";
+        echo -e "\033[91mDir [$path] not found, nothing to do!\033[0m";
+        exit 1;
+    else
+        case "$path" in
+            /*) printf '%s to update\n' "$path"
+                ;;
+            *) printf '%s to update\n' "$PWD/$path"
+               ;;
+        esac
     fi
 done
 
