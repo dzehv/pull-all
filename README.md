@@ -22,6 +22,7 @@ pull_all [OPTIONS]
     -l, Update all local branches to their upstream ff-only
     -f <FILE>, write remotes to specified file
     -r find repositories recursively and update them
+    -P push branches to their upstream
 
 #### Long alternative options:
 
@@ -33,6 +34,7 @@ pull_all [OPTIONS]
     --local-branches
     --remotes-file <FILE>
     --recursive
+    --push
 
 #### Examples:
 

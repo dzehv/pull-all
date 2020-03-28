@@ -26,6 +26,7 @@ for arg in "$@"; do
         "--remotes-file")   set -- "$@" "-f" ;;
         "--local-branches") set -- "$@" "-l" ;;
         "--recursive")      set -- "$@" "-r" ;;
+        "--push")           set -- "$@" "-P" ;;
         *)                  set -- "$@" "$arg" ;;
     esac
 done
@@ -40,10 +41,11 @@ PRUNE=0;
 SUBMODULES=0;
 LOCAL_BRANCHES_UPDATE=0;
 RECURSIVE=0
+PUSH=0
 
 
 # and parse at least
-while getopts 'd:hwpslrf:' opt; do
+while getopts 'd:hwpPslrf:' opt; do
     case $opt in
         d) DIRS+=("$OPTARG")
            ;;
@@ -60,6 +62,8 @@ while getopts 'd:hwpslrf:' opt; do
         l) LOCAL_BRANCHES_UPDATE=1
            ;;
         r) RECURSIVE=1
+           ;;
+        P) PUSH=1
            ;;
         \?) echo "Unknown option: -$OPTARG" >&2;
              exit 1
@@ -92,6 +96,7 @@ Options:\n
     -l, Update all local branches to their upstream ff-only\n
     -f <FILE>, write remotes to specified file\n
     -r find repositories recursively and update them\n
+    -P push branches to their upstream\n
 \n
 Long alternative options:\n
     --dir <PATH>\n
@@ -102,6 +107,7 @@ Long alternative options:\n
     --local-branches\n
     --remotes-file <FILE>\n
     --recursive\n
+    --push\n
 \n
 Examples:\n
     pull_all -d ~/gitrepos -d ~/github_repos -p -s -l\n
@@ -152,6 +158,8 @@ main() {
 
 
 depth1() {
+    # INFO: single operations
+
     # collect repo links and write sh file as ready to git clone command
     # NOTE: works only with 'origin' remote name
     if [ "$WRITE_REMOTES" -eq 1 ]; then
@@ -166,6 +174,20 @@ depth1() {
         exit 0;
     fi
 
+
+    # push and exit, use separate from pull
+    if [ "$PUSH" -eq 1 ]; then
+        # push to upstream
+        echo -e "\033[92mPushing branches to upstream...\033[0m";
+        for DIR in "${DIRS[@]}"; do
+            find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" \
+                 -exec sh -c 'echo Path: {}; true' \; \
+                 -exec git --git-dir={}/.git --work-tree={} push \; 2>/dev/null
+        done
+        exit 0;
+    fi
+
+    # INFO: sequential operations
 
     # NOTE: since git 1.8.5 we can do the next thing
     # find . -maxdepth 1 -type d -not -path "." -not -path ".." \
@@ -221,9 +243,9 @@ depth1() {
     fi
 }
 
-
+# can be dangerous to use!
 recursive() {
-    # TODO: implement prune, submodules, remotes write, etc.
+    # TODO: implement prune, submodules, remotes write, push etc.
     echo -e "\033[92mFinding and updating repositories recursively...\033[0m";
     for DIR in "${DIRS[@]}"; do
         find $DIR -type d -name ".git" \
