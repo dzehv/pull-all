@@ -10,7 +10,7 @@
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." -exec git --git-dir={}/.git --work-tree=$DIR/{} status \;        #
 # find . -maxdepth 1 -type d -not -path "." -not -path ".." \                                                                #
 #    \( -exec sh -c 'echo Path: $DIR/{}; false' \; -false \                                                                  #
-#    -o -exec git --git-dir={}/.git --work-tree=$DIR/{} pull --no-edit \; \)                                                 #
+#    -o -exec git --git-dir={}/.git --work-tree=$DIR/{} pull --prune --no-edit \; \)                                         #
 #                                                                                                                            #
 ##############################################################################################################################
 
@@ -191,14 +191,14 @@ depth1() {
 
     # NOTE: since git 1.8.5 we can do the next thing
     # find . -maxdepth 1 -type d -not -path "." -not -path ".." \
-        # -exec sh -c 'echo Path: $DIR/{}; true' \; -exec git -C {} pull --no-edit --all \;
+        # -exec sh -c 'echo Path: $DIR/{}; true' \; -exec git -C {} pull --prune --no-edit --all \;
 
     # update main repositories (always)
     echo -e "\033[92mUpdating repositories...\033[0m";
     for DIR in "${DIRS[@]}"; do
         find $DIR -maxdepth 1 -type d -not -path "." -not -path ".." -not -path "$DIR" \
              -exec sh -c 'echo Path: {}; true' \; \
-             -exec git --git-dir={}/.git --work-tree={} pull --no-edit --all \; 2>/dev/null
+             -exec git --git-dir={}/.git --work-tree={} pull --prune --no-edit --all \; 2>/dev/null
     done
 
     # prune non existing remote branches (-p arg)
@@ -250,7 +250,7 @@ recursive() {
     for DIR in "${DIRS[@]}"; do
         find $DIR -type d -name ".git" \
              -exec sh -c 'echo Path: {}; true' \; \
-             -exec git --git-dir={} --work-tree={} pull --no-edit --all \; 2>/dev/null
+             -exec git --git-dir={} --work-tree={} pull --prune --no-edit --all \; 2>/dev/null
     done
 }
 
