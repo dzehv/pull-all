@@ -1,31 +1,32 @@
-# pull_all_go builder
+# pull_all_go installation tool
 
 BINARY=pull_all_go
 PREFIX=/usr/local/bin
+SOURCE=main.go
 
 .PHONY: all build install clean help
 
 all: build
 
-# build the binary using local go files
+# compile the tool
 build:
 	@echo "building $(BINARY)..."
-	@go build -o $(BINARY) main.go
+	@go build -o $(BINARY) $(SOURCE)
 
-# install with sudo for system-wide access
+# system-wide installation
 install: build
-	@echo "installing to $(PREFIX)..."
+	@echo "installing $(BINARY) to $(PREFIX)"
 	@sudo install -m 755 $(BINARY) $(PREFIX)/$(BINARY)
-	@echo "done. you can now use '$(BINARY) -d <path>'"
+	@echo "done! you can now use '$(BINARY) -h' for help"
 
-# clean build artifacts
+# cleanup
 clean:
 	@rm -f $(BINARY)
-	@echo "cleaned."
+	@echo "cleaned local binary"
 
-# help target
+# help for make commands
 help:
-	@echo "usage:"
-	@echo "  make build    - compile binary"
-	@echo "  make install  - install to $(PREFIX)"
-	@echo "  make clean    - remove binary"
+	@echo "available commands:"
+	@echo "  make build   - compile $(BINARY)"
+	@echo "  make install - install to $(PREFIX) (requires sudo)"
+	@echo "  make clean   - delete local binary"
