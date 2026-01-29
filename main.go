@@ -59,21 +59,25 @@ func parseFlags() *config {
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nExamples:\n")
 		fmt.Fprintf(os.Stderr, "  pull_all_go -d ~/projects\n")
-		fmt.Fprintf(os.Stderr, "  pull_all_go -d /var/www -w 20 -r\n")
-		fmt.Fprintf(os.Stderr, "  pull_all_go -d . -dry -v\n")
+		fmt.Fprintf(os.Stderr, "  pull_all_go -dir /var/www -workers 20 -r\n")
+		fmt.Fprintf(os.Stderr, "  pull_all_go -dir . -dry -verbose\n")
 		fmt.Fprintf(os.Stderr, "  pull_all_go -d ~/dev -r -w 5\n")
 		fmt.Fprintf(os.Stderr, "  pull_all_go -d . -v  # update and show git statistics (--stat)\n")
 	}
 
 	flag.StringVar(&cfg.path, "d", "", "mandatory: path to parent directory")
-	flag.IntVar(&cfg.workers, "w", 10, "number of concurrent workers")
+	flag.StringVar(&cfg.path, "dir", "", "long one -d")
+	flag.IntVar(&cfg.workers, "w", 5, "number of concurrent workers")
+	flag.IntVar(&cfg.workers, "workers", 5, "long one -w")
 	flag.BoolVar(&cfg.recursive, "r", false, "recursive search for .git directories")
+	flag.BoolVar(&cfg.recursive, "recursive", false, "long one -r")
 	flag.BoolVar(&cfg.dryRun, "dry", false, "show repos without executing updates")
 	flag.BoolVar(&cfg.verbose, "v", false, "show detailed error output")
+	flag.BoolVar(&cfg.verbose, "verbose", false, "long one -v")
 	flag.Parse()
 
 	if cfg.path == "" {
-		fmt.Fprintln(os.Stderr, "\033[91merror: directory path (-d) is mandatory\033[0m")
+		fmt.Fprintln(os.Stderr, "\033[91merror: directory path (-d/-dir) is mandatory\033[0m")
 		flag.Usage()
 		os.Exit(1)
 	}
