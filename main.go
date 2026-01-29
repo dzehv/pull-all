@@ -135,8 +135,14 @@ func runWorkerPool(cfg *config, repos []string) <-chan result {
 // worker: executes git commands and captures output with forced colors
 func worker(jobs <-chan string, results chan<- result) {
 	for path := range jobs {
-		// we use -c color.ui=always to keep colors even when capturing output
-		cmd := exec.Command("git", "-C", path, "-c", "color.ui=always", "pull", "--prune", "--no-edit", "--all", "--ff-only", "--stat")
+		// forcing interactive terminal behavior
+		cmd := exec.Command("git", "-C", path,
+			"-c", "color.ui=always",
+			"-c", "color.status=always",
+			"-c", "color.diff=always",
+			"pull", "--prune", "--no-edit",
+			"--all", "--ff-only", "--stat")
+
 		out, err := cmd.CombinedOutput()
 		results <- result{path: path, err: err, out: out}
 	}
@@ -153,6 +159,9 @@ func report(results <-chan result, verbose bool) {
 			// if verbose is on, show the --stat output even for successful updates
 			if verbose && len(res.out) > 0 {
 				fmt.Printf("%s\n", string(res.out))
+				// write directly to stdout buffer to avoid any fmt processing
+				// os.Stdout.Write(res.out)
+				// fmt.Println() // just for a newline
 			}
 		}
 	}
