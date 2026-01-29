@@ -132,11 +132,11 @@ func runWorkerPool(cfg *config, repos []string) <-chan result {
 	return results
 }
 
-// worker: executes git commands and captures output
+// worker: executes git commands and captures output with forced colors
 func worker(jobs <-chan string, results chan<- result) {
 	for path := range jobs {
-		// we add --stat explicitly, though it's usually default for pull
-		cmd := exec.Command("git", "-C", path, "pull", "--prune", "--no-edit", "--all", "--ff-only", "--stat")
+		// we use -c color.ui=always to keep colors even when capturing output
+		cmd := exec.Command("git", "-C", path, "-c", "color.ui=always", "pull", "--prune", "--no-edit", "--all", "--ff-only", "--stat")
 		out, err := cmd.CombinedOutput()
 		results <- result{path: path, err: err, out: out}
 	}
