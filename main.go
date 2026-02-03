@@ -6,12 +6,27 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
+// pathList allows multiple -d flags
+// added this type to handle multiple directory inputs
+type pathList []string
+
+// implementation for flag.Value interface
+func (p *pathList) String() string {
+	return strings.Join(*p, ", ")
+}
+
+func (p *pathList) Set(value string) error {
+	*p = append(*p, value)
+	return nil
+}
+
 // config holds application settings
 type config struct {
-	path      string
+	paths     pathList // changed from 'path string' to 'paths pathList'
 	workers   int
 	recursive bool
 	dryRun    bool
@@ -28,23 +43,28 @@ type result struct {
 func main() {
 	cfg := parseFlags()
 
-	repos, err := findRepos(cfg.path, cfg.recursive)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error scanning: %v\n", err)
-		os.Exit(1)
+	// logic changed here to iterate over multiple paths
+	var allRepos []string
+	for _, path := range cfg.paths {
+		repos, err := findRepos(path, cfg.recursive)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error scanning %s: %v\n", path, err)
+			continue
+		}
+		allRepos = append(allRepos, repos...)
 	}
 
-	if len(repos) == 0 {
+	if len(allRepos) == 0 {
 		fmt.Println("no git repositories found.")
 		return
 	}
 
 	if cfg.dryRun {
-		showDryRun(repos)
+		showDryRun(allRepos)
 		return
 	}
 
-	results := runWorkerPool(cfg, repos)
+	results := runWorkerPool(cfg, allRepos)
 	report(results, cfg.verbose)
 }
 
@@ -65,8 +85,11 @@ func parseFlags() *config {
 		fmt.Fprintf(os.Stderr, "  pull_all_go -d . -v  # update and show git statistics (--stat)\n")
 	}
 
-	flag.StringVar(&cfg.path, "d", "", "mandatory: path to parent directory")
-	flag.StringVar(&cfg.path, "dir", "", "long one -d")
+	// updated to flag.Var to support multiple inputs for both short and long flags
+	flag.Var(&cfg.paths, "d", "mandatory: path to parent directory")
+	flag.Var(&cfg.paths, "dir", "long one -d")
+
+	// your original options kept intact
 	flag.IntVar(&cfg.workers, "w", 5, "number of concurrent workers")
 	flag.IntVar(&cfg.workers, "workers", 5, "long one -w")
 	flag.BoolVar(&cfg.recursive, "r", false, "recursive search for .git directories")
@@ -76,7 +99,8 @@ func parseFlags() *config {
 	flag.BoolVar(&cfg.verbose, "verbose", false, "long one -v")
 	flag.Parse()
 
-	if cfg.path == "" {
+	// validation updated for slice length
+	if len(cfg.paths) == 0 {
 		fmt.Fprintln(os.Stderr, "\033[91merror: directory path (-d/-dir) is mandatory\033[0m")
 		flag.Usage()
 		os.Exit(1)
