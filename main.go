@@ -78,7 +78,7 @@ func parseFlags() *config {
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nExamples:\n")
-		fmt.Fprintf(os.Stderr, "  pull_all_go -d ~/projects\n")
+		fmt.Fprintf(os.Stderr, "  pull_all_go -d ~/projects -d ~/wrk\n")
 		fmt.Fprintf(os.Stderr, "  pull_all_go -dir /var/www -workers 20 -r\n")
 		fmt.Fprintf(os.Stderr, "  pull_all_go -dir . -dry -verbose\n")
 		fmt.Fprintf(os.Stderr, "  pull_all_go -d ~/dev -r -w 5\n")
