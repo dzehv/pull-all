@@ -68,7 +68,7 @@ func main() {
 	report(results, cfg.verbose)
 }
 
-// parseFlags handles cli arguments and mandatory checks
+// parseFlags handles cli arguments and mandatory checks.
 func parseFlags() *config {
 	cfg := &config{}
 
@@ -109,7 +109,7 @@ func parseFlags() *config {
 	return cfg
 }
 
-// findRepos: scans for .git directories efficiently
+// findRepos scans for .git directories efficiently.
 func findRepos(root string, recursive bool) ([]string, error) {
 	var repos []string
 	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
@@ -130,7 +130,7 @@ func findRepos(root string, recursive bool) ([]string, error) {
 	return repos, err
 }
 
-// runWorkerPool: initializes the goroutine pool and processes jobs
+// runWorkerPool initializes the goroutine pool and processes jobs.
 func runWorkerPool(cfg *config, repos []string) <-chan result {
 	jobs := make(chan string, len(repos))
 	results := make(chan result, len(repos))
@@ -160,7 +160,7 @@ func runWorkerPool(cfg *config, repos []string) <-chan result {
 	return results
 }
 
-// worker: executes git commands and captures output with forced colors
+// worker executes git commands and captures output with forced colors.
 func worker(jobs <-chan string, results chan<- result) {
 	for path := range jobs {
 		// forcing interactive terminal behavior
@@ -176,7 +176,7 @@ func worker(jobs <-chan string, results chan<- result) {
 	}
 }
 
-// report: displays the status and the git output if requested
+// report displays the status and the git output if requested.
 func report(results <-chan result, verbose bool) {
 	for res := range results {
 		if res.err != nil {
@@ -186,7 +186,8 @@ func report(results <-chan result, verbose bool) {
 			fmt.Printf("\033[92mOK:\033[0m     %s\n", res.path)
 			// if verbose is on, show the --stat output even for successful updates
 			if verbose && len(res.out) > 0 {
-				fmt.Printf("%s\n", string(res.out))
+				// git adds own newline char, so fmt.Print here to prevent double
+				fmt.Print(string(res.out))
 				// write directly to stdout buffer to avoid any fmt processing
 				// os.Stdout.Write(res.out)
 				// fmt.Println() // just for a newline
@@ -195,7 +196,7 @@ func report(results <-chan result, verbose bool) {
 	}
 }
 
-// showDryRun: simply lists found repositories
+// showDryRun simply lists found repositories.
 func showDryRun(repos []string) {
 	fmt.Printf("dry-run: found %d repositories:\n", len(repos))
 	for _, repo := range repos {
