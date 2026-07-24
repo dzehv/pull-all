@@ -31,6 +31,7 @@ type config struct {
 	recursive bool
 	dryRun    bool
 	verbose   bool
+	tags      bool
 }
 
 // result holds the outcome of the git operation
@@ -83,6 +84,7 @@ func parseFlags() *config {
 		fmt.Fprintf(os.Stderr, "  pull_all_go -dir . -dry -verbose\n")
 		fmt.Fprintf(os.Stderr, "  pull_all_go -d ~/dev -r -w 5\n")
 		fmt.Fprintf(os.Stderr, "  pull_all_go -d . -v  # update and show git statistics (--stat)\n")
+		fmt.Fprintf(os.Stderr, "  pull_all_go -d . -v -t  # also fetch tags\n")
 	}
 
 	// updated to flag.Var to support multiple inputs for both short and long flags
@@ -97,6 +99,11 @@ func parseFlags() *config {
 	flag.BoolVar(&cfg.dryRun, "dry", false, "show repos without executing updates")
 	flag.BoolVar(&cfg.verbose, "v", false, "show detailed error output")
 	flag.BoolVar(&cfg.verbose, "verbose", false, "long one -v")
+
+	// new flags for fetching tags
+	flag.BoolVar(&cfg.tags, "t", false, "fetch tags (adds --tags to git pull)")
+	flag.BoolVar(&cfg.tags, "tags", false, "long one -t")
+
 	flag.Parse()
 
 	// validation updated for slice length
@@ -141,7 +148,7 @@ func runWorkerPool(cfg *config, repos []string) <-chan result {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			worker(jobs, results)
+			worker(jobs, results, cfg.tags)
 		}()
 	}
 
@@ -160,16 +167,24 @@ func runWorkerPool(cfg *config, repos []string) <-chan result {
 	return results
 }
 
-// worker executes git commands and captures output with forced colors.
-func worker(jobs <-chan string, results chan<- result) {
+// worker executes git commands and captures output with forced colors,
+// optionally fetching tags.
+func worker(jobs <-chan string, results chan<- result, tags bool) {
 	for path := range jobs {
-		// forcing interactive terminal behavior
-		cmd := exec.Command("git", "-C", path,
+		args := []string{
+			"-C", path,
 			"-c", "color.ui=always",
 			"-c", "color.status=always",
 			"-c", "color.diff=always",
 			"pull", "--prune", "--no-edit",
-			"--all", "--ff-only", "--stat")
+			"--all", "--ff-only", "--stat",
+		}
+
+		if tags {
+			args = append(args, "--tags")
+		}
+
+		cmd := exec.Command("git", args...)
 
 		out, err := cmd.CombinedOutput()
 		results <- result{path: path, err: err, out: out}
