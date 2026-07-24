@@ -17,6 +17,7 @@ build:
 install: build
 	@echo "installing $(BINARY) to $(PREFIX)"
 	@sudo install -m 755 $(BINARY) $(PREFIX)/$(BINARY)
+	@rm -f $(BINARY)
 	@echo "done! you can now use '$(BINARY) -h' for help"
 
 # cleanup
